@@ -1,0 +1,181 @@
+---
+title: "Low Coverage Variant Detection"
+author: "mike_schatz (mschatz@cs.jhu.edu)"
+date: "2022-09-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(gridExtra)
+library(tidyr)
+```
+
+## Initalize the sequencing parameters
+ 
+```{r}
+genome_length <- 100000
+coverage <- 100
+read_length <- 100
+num_reads <- (genome_length * coverage) / read_length
+print(paste0("Simulating ", coverage, "x coverage for a ", genome_length, "bp genome (", num_reads, " reads)"))
+```
+
+## Initialize the read count and coverage for the two haplotypes as zero coverage for the entire genome_length
+
+```{r}
+hap_reads <- c(2:1) * 0
+haplotype_coverage <- matrix(0, genome_length, 2)
+```
+
+## Now simulate the sequencing: 
+1. pick a random haplotype (1 or 2)
+2. pick a random starting location for the read
+3. starting at that position increment coverage by 1 for a read length for that haplotype
+
+```{r}
+for (x in 1:num_reads)
+{
+  haplotype <- sample.int(2, 1)
+  read_pos <- sample.int(genome_length-read_length+1, 1)
+  hap_reads[haplotype] <- hap_reads[haplotype]+1
+  
+  for (pos in read_pos:(read_pos+read_length-1))
+  {
+    haplotype_coverage[pos, haplotype] = haplotype_coverage[pos, haplotype] + 1
+  }
+}
+```
+
+```{r include=FALSE}
+## sum the covearge together to compute the total coverage
+total_coverage = haplotype_coverage[,1] + haplotype_coverage[,2]
+```
+
+
+## Summarize the coverage
+
+```{r echo=FALSE}
+cat(paste("Read counts: \n",
+"  hap1:", hap_reads[1], "hap2:", hap_reads[2], "total:", hap_reads[1] + hap_reads[2], "\n",
+"Covearge per haplotype:\n",
+"  hap1:",  mean(haplotype_coverage[,1]), "+/-", format(sd(haplotype_coverage[,1]), digits=4), "[expected sd:", format(sqrt(mean(haplotype_coverage[,1])), digits=4), "]\n",
+"  hap2:",  mean(haplotype_coverage[,2]), "+/-", format(sd(haplotype_coverage[,2]), digits=4), "[expected sd:", format(sqrt(mean(haplotype_coverage[,2])), digits=4), "]\n",
+"  total:", mean(total_coverage),         "+/-", format(sd(total_coverage),         digits=4), "[expected sd:", format(sqrt(mean(total_coverage)), digits=4), "]\n"))
+```
+
+
+## Compute Possion approximation sequencing coverage
+```{r}
+df <- data.frame(total=total_coverage, hap1=haplotype_coverage[,1], hap2=haplotype_coverage[,2])
+max_coverage = max(total_coverage)
+coverages=seq(1:max_coverage)
+total_density = dpois(coverages, mean(df$total))
+hap1_density  = dpois(coverages, mean(df$hap1))
+hap2_density  = dpois(coverages, mean(df$hap2))
+model <- data.frame(cov=coverages, total_density=total_density)
+```
+
+
+## Plot the total coverage distribution
+```{r echo=FALSE}
+ggplot(df, aes(x=total)) + geom_histogram(binwidth=1, aes(y=..density.., color="Simulated")) +
+  geom_line(data=model, aes(x=cov, y=total_density, color="Poisson")) + geom_vline(xintercept=coverage, color="green") +
+  scale_color_manual("Density", values=c("red", "black")) +
+  labs(title="Total Coverage Density", x="cov")
+```
+
+## Plot the coverage distribution for Haplotype 1
+#### (notice the mean coveage is exactly half of the total coverage over both haplotypes)
+```{r echo=FALSE}
+ggplot(df, aes(x=hap1)) + geom_histogram(binwidth=1, aes(y=..density.., color="Simulated")) +
+  geom_line(data=model, aes(x=cov, y=hap1_density, color="Poisson")) + geom_vline(xintercept=coverage/2, color="green") +
+  scale_color_manual("Density", values=c("red", "black")) +
+  labs(title="Hap1 Coverage Density", x="cov")
+```
+
+## Compute the recall of variants as a function of minimum support
+#### e.g. if we require 3 reads to call a variant, what fraction of positions have this number of reads?
+#### Note we can measure this directly from the simulation or use `ppois` to compute analytically
+
+```{r}
+cov_cutoff <- 0:max_coverage
+cov_avail <- rep(0,length(cov_cutoff))
+for (x in cov_cutoff)
+{
+  cov_avail[x]=length(total_coverage[total_coverage >= cov_cutoff[x]])
+}
+df_cov <- data.frame(cutoff = cov_cutoff, avail=cov_avail, avail_perc=cov_avail/genome_length)
+df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff, coverage)))
+```
+
+```{r echo=FALSE}
+ggplot(df_cov, aes(x=cutoff, y=avail_perc, color="Simulated")) + geom_line() + 
+  geom_line(data=df_cov_model, aes(x=cutoff, y=perc, col="Poisson")) + geom_vline(xintercept=100, color="green") +
+  scale_color_manual("Recall", values=c("red", "black")) +
+  labs(title="Total Coverage Recall", x="minimum support", y="recall")
+```
+
+## 30x coverage analysis (coverage distribution + variant recall)
+```{r echo=FALSE}
+mean_cov <- 30; max_range <- 60
+p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
+  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+
+grid.arrange(p1,p2)
+```
+
+
+## 10x coverage analysis (coverage distribution + variant recall)
+```{r echo=FALSE}
+mean_cov <- 10; max_range <- 20
+p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
+  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+
+grid.arrange(p1,p2)
+```
+
+
+## 4x coverage analysis (coverage distribution + variant recall)
+```{r echo=FALSE}
+mean_cov <- 4; max_range <- 20
+p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
+  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+
+grid.arrange(p1,p2)
+```
+
+
+## Finally compute the recall as a function of minimum support and coverage
+```{r echo=FALSE}
+coverages = c(2,3,4,5,6,8,10,15,20,25,30); min_support=0:30; 
+recall = data.frame(min_support=min_support)
+for (c in coverages)
+{
+  rrdf=as.data.frame(x=(1-ppois(min_support, c)))
+  colnames(rrdf)=c(c)
+  recall=cbind(recall, rrdf)
+}
+knitr::kable(head(recall))
+```
+
+
+
+## Plot recall as a function of minimum support and coverage
+```{r echo=FALSE}
+recall_long <- recall %>% pivot_longer(!min_support, names_to="coverage")
+recall_long$coverage <- factor(as.factor(recall_long$coverage), levels=coverages)
+
+ggplot(recall_long, aes(x=min_support, y=value, color=coverage)) + geom_line() + geom_point() +
+  labs(y="recall") + geom_vline(xintercept=2, color="yellow") + scale_x_continuous(breaks=scales::pretty_breaks(n=15))
+```
+
+
+#### Note the recall is computed per haplotype for heterozygous variants. e.g. With 4x coverage per haplotype, we expect to miss ~25% of heterozygous variants per haplotype, so in total we will miss 50% of heterozygous variants overall
