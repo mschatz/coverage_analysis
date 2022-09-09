@@ -108,7 +108,7 @@ for (x in cov_cutoff)
   cov_avail[x]=length(total_coverage[total_coverage >= cov_cutoff[x]])
 }
 df_cov <- data.frame(cutoff = cov_cutoff, avail=cov_avail, avail_perc=cov_avail/genome_length)
-df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff, coverage)))
+df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, coverage)))
 ```
 
 ```{r echo=FALSE}
@@ -123,7 +123,7 @@ ggplot(df_cov, aes(x=cutoff, y=avail_perc, color="Simulated")) + geom_line() +
 mean_cov <- 30; max_range <- 60
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
   geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
-p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
   geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
 
 grid.arrange(p1,p2)
@@ -135,7 +135,7 @@ grid.arrange(p1,p2)
 mean_cov <- 10; max_range <- 20
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
   geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
-p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
   geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
 
 grid.arrange(p1,p2)
@@ -147,7 +147,7 @@ grid.arrange(p1,p2)
 mean_cov <- 4; max_range <- 20
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
   geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
-p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range, mean_cov))), aes(x=cov, y=recall)) + 
+p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
   geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
 
 grid.arrange(p1,p2)
@@ -156,11 +156,11 @@ grid.arrange(p1,p2)
 
 ## Finally compute the recall as a function of minimum support and coverage
 ```{r echo=FALSE}
-coverages = c(2,3,4,5,6,8,10,15,20,25,30); min_support=0:30; 
+coverages = c(1,2,3,4,5,6,7,8,9,10,15,20,25,30); min_support=0:30; 
 recall = data.frame(min_support=min_support)
 for (c in coverages)
 {
-  rrdf=as.data.frame(x=(1-ppois(min_support, c)))
+  rrdf=as.data.frame(x=(1-ppois(min_support-1, c)))
   colnames(rrdf)=c(c)
   recall=cbind(recall, rrdf)
 }
@@ -170,7 +170,7 @@ knitr::kable(head(recall))
 
 
 ## Plot recall as a function of minimum support and coverage
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=6}
 recall_long <- recall %>% pivot_longer(!min_support, names_to="coverage")
 recall_long$coverage <- factor(as.factor(recall_long$coverage), levels=coverages)
 
@@ -179,4 +179,5 @@ ggplot(recall_long, aes(x=min_support, y=value, color=coverage)) + geom_line() +
 ```
 
 
-#### Note the recall is computed per haplotype for heterozygous variants. e.g. With 4x coverage per haplotype, we expect to miss ~25% of heterozygous variants per haplotype, so in total we will miss 50% of heterozygous variants overall
+#### Note the recall is computed per haplotype for heterozygous variants. 
+#### e.g. With 4x coverage per haplotype, requiring a min support of 2, we expect to miss ~10% of heterozygous variants per haplotype, so in total we will miss 20% of heterozygous variants overall
