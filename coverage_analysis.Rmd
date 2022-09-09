@@ -2,7 +2,8 @@
 title: "Low Coverage Variant Detection"
 author: "mike_schatz (mschatz@cs.jhu.edu)"
 date: "2022-09-09"
-output: html_document
+#output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
