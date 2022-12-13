@@ -207,3 +207,11 @@ ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() 
   labs(y="recall", title=paste0("Recall [min_support=",min_support,"]")) + 
   scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + scale_y_continuous(breaks=scales::pretty_breaks(n=10))
 ```
+
+
+## 10x coverage analysis (coverage distribution + variant recall)
+```{r echo=FALSE}
+mean_cov <- 10; max_ins=20000; ins_len=seq(0,max_ins,1000); min_support=2; read_length=20000
+ggplot(data.frame(ins_len=ins_len, recall=(1-ppois(min_support-1, mean_cov*(1-ins_len/read_length)))), aes(x=ins_len, y=recall)) + 
+  geom_line() + geom_point() + labs(x="insertion length", title=paste0("Recall [", mean_cov, "x cov, min_support=", min_support, "]")) 
+```
