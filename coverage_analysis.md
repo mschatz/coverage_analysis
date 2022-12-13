@@ -45,11 +45,11 @@ for (x in 1:num_reads)
 ## Summarize the coverage
 
     ## Read counts: 
-    ##    hap1: 49953 hap2: 50047 total: 1e+05 
-    ##  Covearge per haplotype:
-    ##    hap1: 49.953 +/- 7.13 [expected sd: 7.068 ]
-    ##    hap2: 50.047 +/- 7.197 [expected sd: 7.074 ]
-    ##    total: 100 +/- 10.2 [expected sd: 10 ]
+    ##    hap1: 49924 hap2: 50076 total: 1e+05 
+    ##  Coverage per haplotype:
+    ##    hap1: 49.924 +/- 7.197 [expected sd: 7.066 ]
+    ##    hap2: 50.076 +/- 7.161 [expected sd: 7.076 ]
+    ##    total: 100 +/- 10.37 [expected sd: 10 ]
 
 ## Compute Possion approximation sequencing coverage
 
@@ -100,11 +100,13 @@ df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, co
 
 ![](coverage_analysis_files/figure-markdown_github/unnamed-chunk-12-1.png)
 
-## 4x coverage analysis (coverage distribution + variant recall)
+## 5x coverage analysis (coverage distribution + variant recall)
 
 ![](coverage_analysis_files/figure-markdown_github/unnamed-chunk-13-1.png)
 
 ## Finally compute the recall as a function of minimum support and coverage
+
+    ## Recall as a function of minimum support and total coverage
 
 <table style="width:100%;">
 <colgroup>
@@ -255,4 +257,8 @@ df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, co
 
 #### Note the recall is computed per haplotype for heterozygous variants.
 
-#### e.g. With 4x coverage per haplotype, requiring a min support of 2, we expect to miss ~10% of heterozygous variants per haplotype, so in total we will miss 20% of heterozygous variants overall
+![](coverage_analysis_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
+#### Note the recall is computed per haplotype for heterozygous variants.
+
+![](coverage_analysis_files/figure-markdown_github/unnamed-chunk-17-1.png)

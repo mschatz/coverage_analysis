@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(gridExtra)
 library(tidyr)
+library(tidyverse)
 ```
 
 ## Initalize the sequencing parameters
@@ -60,7 +61,7 @@ total_coverage = haplotype_coverage[,1] + haplotype_coverage[,2]
 ```{r echo=FALSE}
 cat(paste("Read counts: \n",
 "  hap1:", hap_reads[1], "hap2:", hap_reads[2], "total:", hap_reads[1] + hap_reads[2], "\n",
-"Covearge per haplotype:\n",
+"Coverage per haplotype:\n",
 "  hap1:",  mean(haplotype_coverage[,1]), "+/-", format(sd(haplotype_coverage[,1]), digits=4), "[expected sd:", format(sqrt(mean(haplotype_coverage[,1])), digits=4), "]\n",
 "  hap2:",  mean(haplotype_coverage[,2]), "+/-", format(sd(haplotype_coverage[,2]), digits=4), "[expected sd:", format(sqrt(mean(haplotype_coverage[,2])), digits=4), "]\n",
 "  total:", mean(total_coverage),         "+/-", format(sd(total_coverage),         digits=4), "[expected sd:", format(sqrt(mean(total_coverage)), digits=4), "]\n"))
@@ -84,7 +85,7 @@ model <- data.frame(cov=coverages, total_density=total_density)
 ggplot(df, aes(x=total)) + geom_histogram(binwidth=1, aes(y=..density.., color="Simulated")) +
   geom_line(data=model, aes(x=cov, y=total_density, color="Poisson")) + geom_vline(xintercept=coverage, color="green") +
   scale_color_manual("Density", values=c("red", "black")) +
-  labs(title="Total Coverage Density", x="cov")
+  labs(title=paste0("Coverage Density [", coverage, "x cov]"), x="cov")
 ```
 
 ## Plot the coverage distribution for Haplotype 1
@@ -93,7 +94,7 @@ ggplot(df, aes(x=total)) + geom_histogram(binwidth=1, aes(y=..density.., color="
 ggplot(df, aes(x=hap1)) + geom_histogram(binwidth=1, aes(y=..density.., color="Simulated")) +
   geom_line(data=model, aes(x=cov, y=hap1_density, color="Poisson")) + geom_vline(xintercept=coverage/2, color="green") +
   scale_color_manual("Density", values=c("red", "black")) +
-  labs(title="Hap1 Coverage Density", x="cov")
+  labs(title=paste0("Hap1 Coverage Density [", coverage/2, "x cov]"), x="cov")
 ```
 
 ## Compute the recall of variants as a function of minimum support
@@ -115,16 +116,16 @@ df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, co
 ggplot(df_cov, aes(x=cutoff, y=avail_perc, color="Simulated")) + geom_line() + 
   geom_line(data=df_cov_model, aes(x=cutoff, y=perc, col="Poisson")) + geom_vline(xintercept=100, color="green") +
   scale_color_manual("Recall", values=c("red", "black")) +
-  labs(title="Total Coverage Recall", x="minimum support", y="recall")
+  labs(title=paste0("Variant Recall [", coverage, "x cov]"), x="minimum support", y="recall")
 ```
 
 ## 30x coverage analysis (coverage distribution + variant recall)
 ```{r echo=FALSE}
 mean_cov <- 30; max_range <- 60
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
-  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+  geom_vline(xintercept=mean_cov, color="green") + labs(title=paste0("Coverage Density [", mean_cov, "x cov]"))
 p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
-  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title=paste0("Recall [", mean_cov, "x cov]")) 
 
 grid.arrange(p1,p2)
 ```
@@ -134,21 +135,21 @@ grid.arrange(p1,p2)
 ```{r echo=FALSE}
 mean_cov <- 10; max_range <- 20
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
-  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+  geom_vline(xintercept=mean_cov, color="green") + labs(title=paste0("Coverage Density [", mean_cov, "x cov]"))
 p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
-  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title=paste0("Recall [", mean_cov, "x cov]")) 
 
 grid.arrange(p1,p2)
 ```
 
 
-## 4x coverage analysis (coverage distribution + variant recall)
+## 5x coverage analysis (coverage distribution + variant recall)
 ```{r echo=FALSE}
-mean_cov <- 4; max_range <- 20
+mean_cov <- 5; max_range <- 20
 p1<-ggplot(data.frame(cov=0:max_range, density=dpois(0:max_range, mean_cov)), aes(x=cov, y=density)) + geom_line() + geom_point() +
-  geom_vline(xintercept=mean_cov, color="green") + labs(title="Coverage Density")
+  geom_vline(xintercept=mean_cov, color="green") + labs(title=paste0("Coverage Density [", mean_cov, "x cov]"))
 p2<-ggplot(data.frame(cov=0:max_range, recall=(1-ppois(0:max_range-1, mean_cov))), aes(x=cov, y=recall)) + 
-  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title="Recall") 
+  geom_line() + geom_point() + geom_vline(xintercept=mean_cov, color="green") + labs(x="minimum support", title=paste0("Recall [", mean_cov, "x cov]")) 
 
 grid.arrange(p1,p2)
 ```
@@ -164,6 +165,7 @@ for (c in coverages)
   colnames(rrdf)=c(c)
   recall=cbind(recall, rrdf)
 }
+cat("Recall as a function of minimum support and total coverage")
 knitr::kable(head(recall))
 ```
 
@@ -180,4 +182,28 @@ ggplot(recall_long, aes(x=min_support, y=value, color=coverage)) + geom_line() +
 
 
 #### Note the recall is computed per haplotype for heterozygous variants. 
-#### e.g. With 4x coverage per haplotype, requiring a min support of 2, we expect to miss ~10% of heterozygous variants per haplotype, so in total we will miss 20% of heterozygous variants overall
+```{r echo=FALSE, fig.width=10, fig.height=6}
+min_support=2
+cc<-seq(0,10,.1)
+
+recall_min <- data.frame(coverage=cc, hom=(1-ppois(min_support-1, cc)), het=(1-ppois(min_support-1, cc/2)))
+recall_min_long <- recall_min %>% pivot_longer(!coverage, names_to="genotype")
+
+ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() + geom_point() +
+  labs(y="recall", title=paste0("Recall [min_support=",min_support,"]")) + 
+  scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + scale_y_continuous(breaks=scales::pretty_breaks(n=10))
+```
+
+
+#### Note the recall is computed per haplotype for heterozygous variants. 
+```{r echo=FALSE, fig.width=10, fig.height=6}
+min_support=1
+cc<-seq(0,10,.1)
+
+recall_min <- data.frame(coverage=cc, hom=(1-ppois(min_support-1, cc)), het=(1-ppois(min_support-1, cc/2)))
+recall_min_long <- recall_min %>% pivot_longer(!coverage, names_to="genotype")
+
+ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() + geom_point() +
+  labs(y="recall", title=paste0("Recall [min_support=",min_support,"]")) + 
+  scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + scale_y_continuous(breaks=scales::pretty_breaks(n=10))
+```
