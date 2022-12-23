@@ -192,6 +192,16 @@ recall_min_long <- recall_min %>% pivot_longer(!coverage, names_to="genotype")
 ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() + geom_point() +
   labs(y="recall", title=paste0("Recall [min_support=",min_support,"]")) + 
   scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + scale_y_continuous(breaks=scales::pretty_breaks(n=10))
+
+
+pdf("recall_coverage.pdf")
+ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() + geom_point() +
+  labs(y="recall", title=paste0("Recall [min_support=",min_support,"]")) + 
+  scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + 
+  scale_y_continuous(breaks=scales::pretty_breaks(n=10)) +
+  theme(legend.position = c(.9, .15))
+dev.off()
+
 ```
 
 
@@ -214,4 +224,35 @@ ggplot(recall_min_long, aes(x=coverage, y=value, color=genotype)) + geom_line() 
 mean_cov <- 10; max_ins=20000; ins_len=seq(0,max_ins,1000); min_support=2; read_length=20000
 ggplot(data.frame(ins_len=ins_len, recall=(1-ppois(min_support-1, mean_cov*(1-ins_len/read_length)))), aes(x=ins_len, y=recall)) + 
   geom_line() + geom_point() + labs(x="insertion length", title=paste0("Recall [", mean_cov, "x cov, min_support=", min_support, "]")) 
+```
+
+
+```{r echo=FALSE}
+mean_cov <- 10; max_ins=20000; ins_len=seq(0,max_ins,1000); min_support=2; read_length=20000
+
+ins_recall = data.frame(ins_len=ins_len, 
+                        "5x"=(1-ppois(min_support-1, 5*(1-ins_len/read_length))),
+                        "10x"=(1-ppois(min_support-1, 10*(1-ins_len/read_length))),
+                        "20x"=(1-ppois(min_support-1, 20*(1-ins_len/read_length))),
+                        check.names = FALSE)
+
+ins_recall_long <- ins_recall %>% pivot_longer(!ins_len, names_to="coverage")
+
+ins_recall_long$coverage <- factor(ins_recall_long$coverage, levels=c("5x", "10x", "20x"))
+ins_recall_long
+
+ggplot(ins_recall_long, aes(x=ins_len, y=value, color=coverage)) + 
+  geom_line() + geom_point() + 
+  labs(x="insertion length", title=paste0("Recall [min_support=", min_support, "]")) +
+  theme(legend.position = c(.1, .2))
+
+pdf("recall_insertions.pdf")
+ggplot(ins_recall_long, aes(x=ins_len, y=value, color=coverage)) + 
+  geom_line() + geom_point() + 
+  labs(x="insertion length", y="recall", title=paste0("Recall [min_support=", min_support, "]")) +
+  scale_x_continuous(breaks=scales::pretty_breaks(n=10)) + 
+  scale_y_continuous(breaks=scales::pretty_breaks(n=10)) +
+  theme(legend.position = c(.11, .15))
+dev.off()
+
 ```

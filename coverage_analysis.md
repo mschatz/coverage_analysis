@@ -46,11 +46,11 @@ for (x in 1:num_reads)
 ## Summarize the coverage
 
     ## Read counts: 
-    ##    hap1: 49797 hap2: 50203 total: 1e+05 
+    ##    hap1: 49925 hap2: 50075 total: 1e+05 
     ##  Coverage per haplotype:
-    ##    hap1: 49.797 +/- 7.198 [expected sd: 7.057 ]
-    ##    hap2: 50.203 +/- 7.283 [expected sd: 7.085 ]
-    ##    total: 100 +/- 10.35 [expected sd: 10 ]
+    ##    hap1: 49.925 +/- 7.017 [expected sd: 7.066 ]
+    ##    hap2: 50.075 +/- 7.301 [expected sd: 7.076 ]
+    ##    total: 100 +/- 10.26 [expected sd: 10 ]
 
 ## Compute Possion approximation sequencing coverage
 
@@ -129,6 +129,9 @@ df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, co
 
 ![](coverage_analysis_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
+    ## quartz_off_screen 
+    ##                 2
+
 #### Note the recall is computed per haplotype for heterozygous variants.
 
 ![](coverage_analysis_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
@@ -136,3 +139,23 @@ df_cov_model <- data.frame(cutoff = cov_cutoff, perc = (1-ppois(cov_cutoff-1, co
 ## 10x coverage analysis (coverage distribution + variant recall)
 
 ![](coverage_analysis_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+    ## # A tibble: 63 × 3
+    ##    ins_len coverage value
+    ##      <dbl> <fct>    <dbl>
+    ##  1       0 5x       0.960
+    ##  2       0 10x      1.00 
+    ##  3       0 20x      1.00 
+    ##  4    1000 5x       0.950
+    ##  5    1000 10x      0.999
+    ##  6    1000 20x      1.00 
+    ##  7    2000 5x       0.939
+    ##  8    2000 10x      0.999
+    ##  9    2000 20x      1.00 
+    ## 10    3000 5x       0.925
+    ## # … with 53 more rows
+
+![](coverage_analysis_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+    ## quartz_off_screen 
+    ##                 2
